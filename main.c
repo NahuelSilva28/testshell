@@ -14,13 +14,15 @@ int main(void)
     int status;
 
     do {
-        printf("$ ");
+        printf(" :) shell > ");
         line = read_line();
         args = split_line(line);
         status = execute(args);
+
         free(line);
         free(args);
-    } while (status == 0);
 
-    return (0);
+    } while (status);
+
+    return EXIT_SUCCESS;
 }
