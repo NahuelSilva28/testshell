@@ -10,109 +10,100 @@ char *read_line(void)
 {
     char *line = NULL;
     size_t bufsize = 0;
-    getline(&line, &bufsize, stdin);
+
+    if (getline(&line, &bufsize, stdin) == -1) {
+        perror("getline");
+        exit(EXIT_FAILURE);
+    }
+
     return line;
 }
 
 /**
- * split_line - Splits a line of input into an array of arguments.
- * @line: The line of input to split.
- *
- * Return: An array of pointers to the arguments.
+ * split_line - split a line into tokens
+ * @line: the line to split
+ * @bufsize: a pointer to the size of the buffer
+ * Return: an array of tokens
  */
 char **split_line(char *line)
 {
     int bufsize = BUFFER_SIZE, position = 0;
-    char **tokens = malloc(bufsize * sizeof(char *));
-    char *token;
+    char **tokens = malloc(bufsize * sizeof(char*));
+    char *token, *saveptr;
 
-    if (tokens == NULL)
-    {
-        fprintf(stderr, "Error: allocation error\n");
+    if (!tokens) {
+        fprintf(stderr, "Allocation error\n");
         exit(EXIT_FAILURE);
     }
 
-    token = strtok(line, DELIMITER);
-    while (token != NULL)
-    {
-        tokens[position] = token;
+    token = strtok_r(line, TOKEN_DELIMITERS, &saveptr);
+    while (token != NULL) {
+        tokens[position] = strdup(token);
+        if (!tokens[position]) {
+            fprintf(stderr, "Allocation error\n");
+            exit(EXIT_FAILURE);
+        }
         position++;
 
-        if (position >= bufsize)
-        {
+        if (position >= bufsize) {
             bufsize += BUFFER_SIZE;
-            tokens = realloc(tokens, bufsize * sizeof(char *));
-            if (tokens == NULL)
-            {
-                fprintf(stderr, "Error: allocation error\n");
+            tokens = realloc(tokens, bufsize * sizeof(char*));
+            if (!tokens) {
+                fprintf(stderr, "Allocation error\n");
                 exit(EXIT_FAILURE);
             }
         }
 
-        token = strtok(NULL, DELIMITER);
+        token = strtok_r(NULL, TOKEN_DELIMITERS, &saveptr);
     }
     tokens[position] = NULL;
     return tokens;
 }
-/* execute */
+
+/**
+ * exit_shell - Exits the shell.
+ *
+ * Return: Nothing.
+ */
+void exit_shell(void)
+{
+    printf("Exiting shell...\n");
+    exit(EXIT_SUCCESS);
+}
+
+/**
+ * execute - Executes a command with arguments.
+ * @args: The array of arguments, including the command.
+ *
+ * Return: The status code of the executed command.
+ */
 int execute(char **args)
 {
-    int status = 0;
     pid_t pid;
+    int status;
 
-    /* Check if command exists in PATH */
-    char *path = getenv("PATH");
-    char *dir = strtok(path, ":");
-    while (dir != NULL)
-    {
-        char *cmd_path = malloc(strlen(dir) + strlen(args[0]) + 2);
-        sprintf(cmd_path, "%s/%s", dir, args[0]);
-
-        if (access(cmd_path, X_OK) == 0)
-        {
-            /* Command found in directory */
-            printf("Executing command: %s\n", cmd_path);
-            args[0] = cmd_path;
-
-            pid = fork();
-            if (pid == -1)
-            {
-                perror("Error: fork failed");
-                exit(EXIT_FAILURE);
-            }
-            else if (pid == 0)
-            {
-                /* Child process */
-                if (execv(args[0], args) == -1)
-                {
-                    perror("Error: exec failed");
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else
-            {
-                /* Parent process */
-                wait(&status);
-                if (WIFEXITED(status))
-                {
-                    status = WEXITSTATUS(status);
-                }
-            }
-
-            /* Free memory */
-            free(cmd_path);
-
-            return status;
-        }
-
-        /* Free memory */
-        free(cmd_path);
-
-        /* Move to next directory in PATH */
-        dir = strtok(NULL, ":");
+    if (args[0] == NULL) {
+        return 1;
     }
 
-    /* Command not found */
-    fprintf(stderr, "Error: command not found: %s\n", args[0]);
+    if (strcmp(args[0], "exit") == 0) {
+        exit_shell();
+    }
+
+    pid = fork();
+    if (pid == 0) {
+        /* Child process */
+        if (execvp(args[0], args) == -1) {
+            perror("execute");
+        }
+        exit(EXIT_FAILURE);
+    } else if (pid < 0) {
+        /* Error forking */
+        perror("execute");
+    } else {
+        /* Parent process */
+        waitpid(pid, &status, WUNTRACED);
+    }
+
     return 1;
 }
