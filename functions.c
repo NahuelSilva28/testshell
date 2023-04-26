@@ -79,7 +79,7 @@ void exit_shell(void)
  */
 int execute(char **args)
 {
-    pid_t pid;    /*he "pid" variable will store the process ID of the child process created by the fork() system call*/
+    pid_t pid;    /*"pid" variable will store the process ID of the child process created by the fork() system call*/
     int status;   /* the "status" variable will store the exit status of the child process.*/
 
     if (args[0] == NULL) {
@@ -93,7 +93,7 @@ int execute(char **args)
     pid = fork();
     if (pid == 0) {
         /* Child process */
-        if (execvp(args[0], args) == -1) {  /*These lines create a child process using the fork() system call.
+        if (execvp(args[0], args) == -1) {  /*create a child process using the fork() system call.
                                             If the return value of fork() is 0, the current process is the child process.
                                             In the child process, the execvp() system call is used to replace the current process with the new process specified by the "args" array.
                                             If execvp() returns -1, an error occurred and perror() is called to print an error message*/
