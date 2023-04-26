@@ -10,15 +10,14 @@
 #include <sys/stat.h>
 
 #define BUFFER_SIZE 1024
-#define DELIMITER " \t\r\n\a"
+#define TOKEN_DELIMITERS " \t\r\n\a"
 
 
 /* Function prototypes */
 char *read_line(void);
 char **split_line(char *line);
 int execute(char **args);
-extern char **environ;
-
+void exit_shell(void);
 
 
 #endif /* MAIN_H */
