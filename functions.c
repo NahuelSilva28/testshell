@@ -79,8 +79,8 @@ void exit_shell(void)
  */
 int execute(char **args)
 {
-    pid_t pid;
-    int status;
+    pid_t pid;    /*he "pid" variable will store the process ID of the child process created by the fork() system call*/
+    int status;   /* the "status" variable will store the exit status of the child process.*/
 
     if (args[0] == NULL) {
         return 1;
@@ -93,7 +93,10 @@ int execute(char **args)
     pid = fork();
     if (pid == 0) {
         /* Child process */
-        if (execvp(args[0], args) == -1) {
+        if (execvp(args[0], args) == -1) {  /*These lines create a child process using the fork() system call.
+                                            If the return value of fork() is 0, the current process is the child process.
+                                            In the child process, the execvp() system call is used to replace the current process with the new process specified by the "args" array.
+                                            If execvp() returns -1, an error occurred and perror() is called to print an error message*/
             perror("execute");
         }
         exit(EXIT_FAILURE);
@@ -102,7 +105,9 @@ int execute(char **args)
         perror("execute");
     } else {
         /* Parent process */
-        waitpid(pid, &status, WUNTRACED);
+        waitpid(pid, &status, WUNTRACED); /* In the parent process, waitpid() is used to wait for the child process to finish 
+        executing. The WUNTRACED option tells waitpid() to return immediately if the child process is stopped,
+        but not terminated. The exit status of the child process is stored in the "status" variable */
     }
 
     return 1;
